@@ -56,7 +56,7 @@ def check_email():
     for email_id in email_ids:
         # Fetch each email by its ID
         res, msg = mail.fetch(email_id, '(RFC822)')
-        print(email_id)
+
         for response in msg:
             if isinstance(response, tuple):
                 # parse a bytes email into a message object
@@ -109,9 +109,13 @@ async def process_emails():
             await asyncio.sleep(0.5)
 
 
+async def periodically_check_emails(interval):
+    while True:
+        await process_emails()
+        await asyncio.sleep(interval)
+
 def main():
-    # while True:
-    asyncio.run(process_emails())
+    asyncio.run(periodically_check_emails(300))
 
 
 if __name__ == "__main__":
