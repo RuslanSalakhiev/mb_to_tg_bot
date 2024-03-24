@@ -21,7 +21,7 @@ def clean_string(input, search_string, direction):
         if direction == 'before':
             return input[index + len(search_string):]
         else:
-            return input[:index - len(search_string)]
+            return input[:index]
     else:
         return input
 
@@ -65,6 +65,7 @@ def check_email():
 
                 images = get_images(html_data)
                 soup = BeautifulSoup(html_data, "html.parser")
+
                 plain_text = soup.get_text(separator='\n')
                 final_text = clean_string(plain_text, 'Updated Task', 'before')
                 final_text = clean_string(final_text, 'View full details', 'after')
@@ -73,11 +74,14 @@ def check_email():
                 final_text = re.sub(r'\n+', '\n', final_text)
                 final_text = final_text.strip()
                 final_text = final_text.replace('.\nWhen:\n', '')
-
+                # Проверка что есть домашка
+                if 'homework' in final_text.lower():
+                    final_text = '⚠️ Homework ⚠️\n\n' + final_text
+                else:
+                    final_text = '⚪ No Homework ⚪ \n\n' + final_text
                 # Проверка на общее письмо (не про Антона)
                 if not ('Anton' in final_text):
                     emails.append({'text': final_text, 'img': images})
-
         # пометить как прочитанное
         email_num = email_id.decode('utf-8')
         mail.store(str(email_num), '+FLAGS', '\Seen')
