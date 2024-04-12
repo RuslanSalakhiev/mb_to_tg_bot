@@ -37,6 +37,18 @@ def get_images(html_content):
     filtered_urls = [url for url in filtered_urls if "mandrillapp.com" not in url]
     return filtered_urls
 
+def get_links(html_content):
+    soup = BeautifulSoup(html_content, "lxml")
+
+    # Find all link tags
+    links = soup.find_all('a')
+
+    # Extract href attributes
+    link_urls = [link['href'] for link in links if 'href' in link.attrs]
+    filtered_urls = [url for url in link_urls if "assets/emails" not in url]
+    filtered_urls = [url for url in filtered_urls if "youtube.com" in url]
+    return filtered_urls
+
 
 def check_email():
     # Connect to the email server
@@ -64,6 +76,7 @@ def check_email():
                 html_data = msg.get_payload(decode=True).decode()
 
                 images = get_images(html_data)
+                links = get_links(html_data)
                 soup = BeautifulSoup(html_data, "html.parser")
 
                 plain_text = soup.get_text(separator='\n')
@@ -81,7 +94,7 @@ def check_email():
                     final_text = '⚪ No Homework ⚪ \n\n' + final_text
                 # Проверка на общее письмо (не про Антона)
                 if not ('Anton' in final_text):
-                    emails.append({'text': final_text, 'img': images})
+                    emails.append({'text': final_text, 'img': images, 'links': links})
         # пометить как прочитанное
         email_num = email_id.decode('utf-8')
         mail.store(str(email_num), '+FLAGS', '\Seen')
@@ -90,11 +103,15 @@ def check_email():
     return emails
 
 
-async def send_message_to_telegram(message, imgs):
+async def send_message_to_telegram(message, imgs, links):
     await bot.send_message(chat_id=chat_id, text=message)
 
     for img in imgs:
         await send_message_img_telegram(img)
+        await asyncio.sleep(0.5)
+
+    for link in links:
+        await send_message_img_telegram(link)
         await asyncio.sleep(0.5)
 
 
@@ -109,7 +126,8 @@ async def process_emails():
         for item in emails:
             text = item['text']
             imgs = item['img']
-            await send_message_to_telegram(text, imgs)
+            links = item['links']
+            await send_message_to_telegram(text, imgs,links)
             await asyncio.sleep(0.5)
 
 
